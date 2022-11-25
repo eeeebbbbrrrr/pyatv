@@ -8,6 +8,7 @@ from ipaddress import IPv4Address
 import logging
 import sys
 import traceback
+from sys import stdin
 
 from pyatv import connect, const, exceptions, interface, pair, scan
 from pyatv.conf import AppleTV, ManualService
@@ -347,7 +348,7 @@ def _in_range(lower, upper, allow_none=False):
     return _checker
 
 
-async def cli_handler(loop):
+async def cli_handler(loop, line_args):
     """Application starts here."""
     parser = argparse.ArgumentParser()
 
@@ -471,8 +472,8 @@ async def cli_handler(loop):
         action="store_true",
         dest="mdns_debug",
     )
-
-    args = parser.parse_args()
+ 
+    args = parser.parse_args(line_args)
     if args.manual and isinstance(args.id, list):
         parser.error("--manual only supports one identifier to --id")
 
@@ -714,7 +715,12 @@ async def appstart(loop):
     # happens (which would leave resources dangling)
     async def _run_application(loop):
         try:
-            return await cli_handler(loop)
+            if len(sys.argv) == 2 and sys.argv[1] == "loop":
+                print("awaiting input...")
+                for line in stdin:
+                    await cli_handler(loop, line.strip().split(' '))
+            else:
+                return await cli_handler(loop, sys.argv[0:])
 
         except KeyboardInterrupt:
             pass  # User pressed Ctrl+C, just ignore it
