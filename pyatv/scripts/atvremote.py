@@ -718,7 +718,10 @@ async def appstart(loop):
             if len(sys.argv) == 2 and sys.argv[1] == "loop":
                 print("awaiting input...")
                 for line in stdin:
-                    await cli_handler(loop, line.strip().split(' '))
+                    line = line.strip()
+                    if line == "quit":
+                        return 0
+                    await cli_handler(loop, line.split(' '))
                     print("awaiting input...")
             else:
                 return await cli_handler(loop, sys.argv[0:])
